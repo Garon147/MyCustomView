@@ -6,6 +6,7 @@ import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.text.style.LineHeightSpan;
@@ -16,153 +17,112 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 /**
  * Created by VKI on 02.12.2017.
  */
 
 public class CustomView extends View {
 
-    private boolean showText;
-    private int textPos;
+    private int squaresCount;
+    private int startColor;
 
-    private Paint textPaint;
-    private int textColor;
-    private float textHeight;
+    private boolean isFirstLaunch;
 
-    private Paint piePaint;
-    private Paint shadowPaint;
+    private Paint squarePaint;
 
-    private GestureDetector detector;
+
 
     public CustomView(Context context, AttributeSet attributeSet) {
 
         super(context, attributeSet);
-        TypedArray array = context.getTheme().obtainStyledAttributes(
-                attributeSet,
-                R.styleable.CustomView,
-                0,
-                0);
-
-        try {
-
-            showText = array.getBoolean(R.styleable.CustomView_showText, false);
-            textPos = array.getInteger(R.styleable.CustomView_labelPosition, 0);
-        } finally {
-
-            array.recycle();
-        }
-
-        detector = new GestureDetector(CustomView.this.getContext(), new CustomListener());
-        textColor = R.color.black;
-
         init();
     }
 
 
     private void init() {
 
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(textColor);
-        if (textHeight == 0) {
-
-            textHeight = textPaint.getTextSize();
-        } else {
-
-            textPaint.setTextSize(textHeight);
-        }
-
-        piePaint = new Paint();
-        piePaint.setStyle(Paint.Style.STROKE);
-        piePaint.setColor(textColor);
-
-        shadowPaint = new Paint(0);
-        shadowPaint.setColor(0xff101010);
-        shadowPaint.setMaskFilter(new BlurMaskFilter(8, BlurMaskFilter.Blur.NORMAL));
+        squarePaint = new Paint();
+        squarePaint.setStyle(Paint.Style.FILL);
     }
 
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-
-        super.onSizeChanged(w, h, oldw, oldh);
-
-        // Account for padding
-        float xpad = (float)(getPaddingLeft() + getPaddingRight());
-        float ypad = (float)(getPaddingTop() + getPaddingBottom());
-
-        // Account for the label
-        if (showText) xpad += textHeight;
-
-        float ww = (float)w - xpad;
-        float hh = (float)h - ypad;
-
-        // Figure out how big we can make the pie.
-        float diameter = Math.min(ww, hh);
-    }
-
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        boolean result = detector.onTouchEvent(event);
-
-        if(!result) {
-
-            if(event.getAction() == MotionEvent.ACTION_UP) {
-
-                stopNestedScroll();
-                result = true;
-            }
-        }
-
-        return result;
-    }
 
     @Override
     protected void onDraw(Canvas canvas) {
 
         super.onDraw(canvas);
 
-        WindowManager manager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = manager.getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
+        int width = this.getWidth();
+        int height = this.getHeight();
 
-        piePaint.setStrokeWidth(10.0f);
-        canvas.drawRect(30, 30, 300, 80, piePaint);
-
-
-//        canvas.drawLine(size.x * 0.5f, 0.0f, size.x * 0.5f, size.y, piePaint);
-//        canvas.drawLine(0.0f, size.y * 0.5f, size.x, size.y * 0.5f, piePaint);
-
-        canvas.drawText("ABCD", 15, 15, textPaint);
+        int square = width * height;
+        int squareX = width * 50;
+        squaresCount = (int)(square / 250);
+        int squareY = height * 50;
+        int rowsCountX = (int)(square / squareX);
+        int rowsCountY = (int)(square / squareY);
 
 
+        for(int i = 0; i < rowsCountY; i++)
+        {
+            for(int j = 0; j < rowsCountX; j++)
+            {
+                if(!isFirstLaunch) {
 
-//        canvas.drawLine();
+                    if(i % 2 == 0 && j % 2 != 0)
+                    {
+                        squarePaint.setColor(Color.YELLOW);
+                    }
+                    else
+                    {
+                        squarePaint.setColor(Color.BLACK);
+                    }
+                }
+                else
+                {
+                    Random random = new Random();
+//                    squarePaint.setARGB(
+//                            255,
+//                            random.nextInt(255),
+//                            random.nextInt(255),
+//                            random.nextInt(255)
+//                    );
+                    squarePaint.setColor(startColor);
+                    squarePaint.setAlpha(random.nextInt(256));
+                }
+
+                canvas.drawRect(i * 50, j * 50, 50 + i * 50, 50 + j * 50, squarePaint);
+            }
+        }
+
+        if(!isFirstLaunch) {
+            isFirstLaunch = true;
+        }
     }
 
     //region Properties
-    public boolean isShowText() {
+    public boolean isFirstLaunch() {
 
-        return showText;
+        return isFirstLaunch;
     }
 
-    public void setShowText(boolean showText) {
+    public int getSquaresCount() {
 
-        this.showText = showText;
+        return squaresCount;
+    }
+
+    public void setSquaresCount(int squaresCount) {
+
+        this.squaresCount = squaresCount;
         invalidate();
         requestLayout();
     }
 
-    public int getTextPos() {
+    public void setStartColor(int color) {
 
-        return textPos;
-    }
-
-    public void setTextPos(int textPos) {
-
-        this.textPos = textPos;
+        this.startColor = color;
         invalidate();
         requestLayout();
     }
